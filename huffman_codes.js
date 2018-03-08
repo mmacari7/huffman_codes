@@ -29,6 +29,14 @@ for (var i of infile){
     else
         frequencies[i] = 1;
 }
+
+var total_chars = 0;
+for (var key in frequencies){
+    total_chars += frequencies[key];
+}
+for (var key in frequencies){
+    frequencies[key] = (frequencies[key] / total_chars) * 100;
+}
 console.log(frequencies);
 
 /* Step 2: Construct the frequency table according to the input text read from the file:
