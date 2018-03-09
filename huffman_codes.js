@@ -167,17 +167,7 @@ function main() {
 main();
 
 
-
-
-
-
-
-
-
-// DONT USE THIS TRAILOR TRASH
-// Create new object that stores pointers and ID
-// Huffman Node should just store Frequency, Character and ID
 // Change priority Q To not be so horifically inefficient
-// Make priority queue operate with new objects
-// Tree should be strictly pointers
-//HURRAY
+// Traverse tree in order to obtain huffman codes
+// Generate all tables for output file
+// Fix read in function, if you enter garbage as the input it does some weird stuff
