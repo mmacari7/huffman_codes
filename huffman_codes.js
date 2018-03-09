@@ -124,7 +124,7 @@ function readIn() {
  * 2) The Huffman code for each letter and digit in the source code
  * 3) The length of the coded message in terms of the number of bits */
 
-function main() {
+function genTree(){
     var f = readIn();
     var  i = 0;
     var q = new priorityQueue();
@@ -132,17 +132,36 @@ function main() {
         var node = new huffman_node(f[i][0],i,f[i][1]);
         q.enqueue(node);
     }
-    var low = q.dequeue();
-    var lowTwo = q.dequeue();
-    var taco = new huffman_node((low.frequency + lowTwo.frequency), i++, null, low.id, lowTwo.id);
-    low.parentUpdate(taco.id);
-    lowTwo.parentUpdate(taco.id);
-    console.log(taco);
-    console.log(low);
-    console.log(lowTwo);
-    console.log(taco.left);
+
+    var l = null;
+    var r = null;
+    var par = null;
+    while(q.queue.length > 1){
+        l = q.dequeue();
+        r = q.dequeue();
+        par = new huffman_node((l.frequency + r.frequency), i++, null, l, r);
+        l.parentUpdate(par);
+        r.parentUpdate(par);
+        q.enqueue(par);
+    }
+    // var low = q.dequeue();
+    // var lowTwo = q.dequeue();
+    // var taco = new huffman_node((low.frequency + lowTwo.frequency), i++, null, low, lowTwo);
+    // low.parentUpdate(taco);
+    // lowTwo.parentUpdate(taco);
+    // q.enqueue(taco);
+    // console.log(taco.id);
+    //console.log(taco);
+    //console.log(low);
+    //console.log(lowTwo);
+    //console.log(taco);
+    var root = q.queue[0];
+    console.log(root);
+}
 
 
+function main() {
+    genTree();
 }
 
 main();
