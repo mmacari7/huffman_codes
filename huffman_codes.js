@@ -6,47 +6,46 @@ var fs = require('fs');
 
 
 class priorityQueue{
+    //Constructor for priority Queue
     constructor(){
         this.queue = [];
     };
-
+    //Programming for enqueue
     enqueue(node){
-        var contain = false;
-
-        // if(this.queue.length < 1){
-        //     this.queue.push(node);
-        // }
-        //
-        //
-        // var l = 0;
-        // var r = this.queue.length -1;
-        // while(l <= r){
-        //     var mid = Math.floor((l+r) / 2);
-        //     if(node.frequency == this.queue[mid].frequency){
-        //         return
-        //     }
-        //     if(node.frequency > this.queue[mid].frequency){
-        //         l = mid + 1;
-        //     }
-        //     else{
-        //         r = mid - 1;
-        //     }
-        // }
-        // this.queue.splice(r, 0, node);
-
-
-        for (var i = 0; i < this.queue.length; i++) {
-            if (this.queue[i].frequency > node.frequency) {
-                this.queue.splice(i, 0, node);
-                contain = true;
-                break;
-            }
-        }
-        if (!contain) {
+        // Binary Search for finding the proper location to insert the value in the queue
+        if (this.queue.length === 0 || this.queue[this.queue.length - 1].frequency <= node.frequency) {
             this.queue.push(node);
+        }
+        else if (node.frequency <= this.queue[0].frequency) {
+            this.queue.unshift(node);
+        }
+        else {
+            var l = 0;
+            var r = this.queue.length - 1;
+
+            while (true) {
+                var mid = Math.floor(l + ((r - l) / 2));
+                if (node.frequency >= this.queue[mid].frequency && node.frequency <= this.queue[mid + 1].frequency) {
+                    this.queue.splice(mid + 1, 0, node);
+                    break;
+                }
+                if (node.frequency <= this.queue[mid].frequency && node.frequency >= this.queue[mid - 1].frequency) {
+                    this.queue.splice(mid, 0, node);
+                    break;
+                }
+                if (node.frequency >= this.queue[mid].frequency) {
+                    l = mid + 1;
+                    //i = i + Math.floor((i + 1) / 2);
+                }
+                else if (node.frequency <= this.queue[mid].frequency) {
+                    r = mid - 1;
+                    //i = Math.floor(i / 2);
+                }
+            }
         }
     }
     dequeue(){
+        //Function for pulling the values out of the queue
         if(this.queue.length == 0){
             return("Is empty");
         }
@@ -57,6 +56,7 @@ class priorityQueue{
 }
 
 class huffman_node{
+    //Constructor for our huffman nodes
     constructor(frequency, id, symbol = null, left = null, right = null, parent = null){
         this.frequency = frequency;
         this.id = id;
@@ -65,37 +65,36 @@ class huffman_node{
         this.left = left;
         this.right = right;
     };
-
-    parentUpdate(parent){
-        this.parent = parent;
-    }
 }
 
-function readIn() {
+function readIn(folderPath) {
     /* Step 1: Take text input from a file named "infile.dat" */
-    var infile_path = prompt('Enter the path to your "infile.dat" to be loaded or nothing if "infile.dat" is in your current directory: ');
-//var outfile_path = prompt('Enter the path to your "outfile.dat" file to be saved or nothing if "outfile.dat" is in your current directory.\n');
+    //var outfile_path = prompt('Enter the path to your "outfile.dat" file to be saved or nothing if "outfile.dat" is in your current directory.\n');
 
-    if (infile_path === '')
-        infile_path = './infile.dat';
+    if (folderPath === '')
+        folderPath = './infile.dat';
 
     try {
-        var infile = fs.readFileSync(infile_path, "utf8");
-        //console.log(infile);
+        var infile = fs.readFileSync(folderPath, "utf8");
     }
     catch (error) {
-        return("The file doesn't exist");
+        return ("The file doesn't exist");
     }
-
+    // initializes and creates all variables for the input frequencies etc.
     var frequencies = {};
+    var occur = {};
     var letters = RegExp('[^A-Za-z]');
     for (var i of infile) {
         if (letters.test(i))
             continue;
-        if (i in frequencies)
+        if (i in frequencies) {
             frequencies[i] += 1;
-        else
+            occur[i] += 1;
+        }
+        else {
             frequencies[i] = 1;
+            occur[i] = 1;
+        }
     }
 
     var total_chars = 0;
@@ -105,10 +104,11 @@ function readIn() {
     for (var key in frequencies) {
         frequencies[key] = (frequencies[key] / total_chars) * 100;
     }
-    var items = Object.keys(frequencies).map(function(key) {
+    var items = Object.keys(frequencies).map(function (key) {
         return [frequencies[key], key];
     });
-    return(items);
+
+    return [occur, items];
 }
 /* Step 2: Construct the frequency table according to the input text read from the file:
  * The frequency's must be listed, in order, from largest (at the top) to smallest (at the bottom) */
@@ -124,8 +124,8 @@ function readIn() {
  * 2) The Huffman code for each letter and digit in the source code
  * 3) The length of the coded message in terms of the number of bits */
 
-function genTree(){
-    var f = readIn();
+//Function for generating our huffman tree using the nodes in priority queue
+function genTree(f){
     var  i = 0;
     var q = new priorityQueue();
     for(; i < f.length; i++){
@@ -136,38 +136,77 @@ function genTree(){
     var l = null;
     var r = null;
     var par = null;
-    while(q.queue.length > 1){
-        l = q.dequeue();
-        r = q.dequeue();
-        par = new huffman_node((l.frequency + r.frequency), i++, null, l, r);
-        l.parentUpdate(par);
-        r.parentUpdate(par);
-        q.enqueue(par);
+    while(q.queue.length > 1){          // While the queue has more than just the root node in it
+        l = q.dequeue();                // Left node removed from front of queue, least weight
+        r = q.dequeue();                // Right node removed from front of queue
+        par = new huffman_node((l.frequency + r.frequency), i++, null, l, r);               // Creates our parent node and sets its left and right values
+        l.parent = par;                                                                     // Updates the parent of our left and right nodes
+        r.parent = par;
+        q.enqueue(par);                         // Reinserts new parent node in proper location in queue
     }
-    // var low = q.dequeue();
-    // var lowTwo = q.dequeue();
-    // var taco = new huffman_node((low.frequency + lowTwo.frequency), i++, null, low, lowTwo);
-    // low.parentUpdate(taco);
-    // lowTwo.parentUpdate(taco);
-    // q.enqueue(taco);
-    // console.log(taco.id);
-    //console.log(taco);
-    //console.log(low);
-    //console.log(lowTwo);
-    //console.log(taco);
-    var root = q.queue[0];
-    console.log(root);
+
+    var root = q.queue[0];                      // Obtains our final root node tree
+    return(root);                               // Returns the root
 }
 
+// Function utilized to traverse the tree in order to generate our huffman nodes
+// Recursive call creating and updating the string as 0 or 1 based on going left or right
+function storeCode(root, str, arr){
+    if(root.left == null && root.right == null && root.symbol != null){
+        arr.push([root.symbol, root.frequency, str]);
+        return;
+    }
+    storeCode(root.left, str+'0', arr);
+    storeCode(root.right, str+'1', arr);
+}
 
+// Function to sort our table in descending order based on the frequency of the letter
+function sortBy(a,b){
+    if(a[1] === b[1]){
+        return(0)
+    }
+    else{
+        return(a[1] > b[1]) ? -1 : 1;
+    }
+
+}
+
+// Function to write our table to the output file with the correct symbols, frequencies, and huffman codes
+function writeTables(table, occur){
+    var s = 'Symbol    Frequency   \n';
+    for (var i = 0; i < table.length; i++){
+        var g = table[i][1].toFixed(2);
+        s += table[i][0] + '         ' + g + ' '.repeat(12 - String(g).length) + table[i][1] + '\n';
+    }
+
+    var totalBits = 0;
+    for (var key = 0; key < table.length; key++) {
+        totalBits += occur[table[key][0]] * table[key][2].length;
+    }
+    s += '\nTotal bits: ' + totalBits;
+
+    fs.writeFile('outfile.dat', s, (err) => {
+        if (err) throw err;
+        console.log('File saved!');
+    });
+}
+
+//Main function that uses all of our functions together in order to perform the tasks
 function main() {
-    genTree();
+    var folderPath = prompt('Enter the path to your "infile.dat" to be loaded or nothing if "infile.dat" is in your current directory: ');
+    var input = readIn(folderPath);
+    if (input == "The file doesn't exist") {
+        console.log("The file doesn't exist");
+        return;
+    }
+    var str = '';
+    var root = genTree(input[1]);
+    var table = [];
+    storeCode(root, str, table);
+    table.sort(sortBy);
+
+    console.log(root.left);
+    writeTables(table, input[0]);
 }
 
 main();
-
-
-// Change priority Q To not be so horifically inefficient
-// Traverse tree in order to obtain huffman codes
-// Generate all tables for output file
-// Fix read in function, if you enter garbage as the input it does some weird stuff
